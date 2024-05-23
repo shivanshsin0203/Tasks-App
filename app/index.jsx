@@ -1,26 +1,35 @@
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, Animated } from 'react-native';
-import React, { useState } from 'react';
-import { Link } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome } from '@expo/vector-icons';
-import { Ionicons } from '@expo/vector-icons';
-import Checkbox from 'expo-checkbox';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Animated,
+} from "react-native";
+import React, { useState } from "react";
+import { Link } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import Checkbox from "expo-checkbox";
+import LottieView from "lottie-react-native";
 
 const index = () => {
   const [task, setTask] = useState([]);
-  const [quickTask, setQuickTask] = useState('');
+  const [quickTask, setQuickTask] = useState("");
   const [fadeOutAnimations, setFadeOutAnimations] = useState([]);
 
   const addTask = () => {
     setTask([...task, { text: quickTask, checked: false }]);
-    setQuickTask('');
+    setQuickTask("");
     setFadeOutAnimations([...fadeOutAnimations, new Animated.Value(1)]);
   };
 
   const handleCheckboxChange = (index) => {
     const updatedTasks = task.map((item, i) => {
-      if (i === index) { 
+      if (i === index) {
         return { ...item, checked: !item.checked };
       }
       return item;
@@ -34,7 +43,9 @@ const index = () => {
       useNativeDriver: true,
     }).start(() => {
       setTask((prevTasks) => prevTasks.filter((_, i) => i !== index));
-      setFadeOutAnimations((prevAnimations) => prevAnimations.filter((_, i) => i !== index));
+      setFadeOutAnimations((prevAnimations) =>
+        prevAnimations.filter((_, i) => i !== index)
+      );
     });
   };
 
@@ -54,13 +65,26 @@ const index = () => {
                     style={styles.checkbox}
                     value={item.checked}
                     onValueChange={() => handleCheckboxChange(index)}
-                    color={item.checked ? 'green' : undefined}
+                    color={item.checked ? "green" : undefined}
                   />
                   <Text className="text-white ml-2">{item.text}</Text>
                 </Animated.View>
               ))
             ) : (
-              <Text className=" text-white">No Task</Text>
+              <View className=" flex flex-col justify-center items-center space-y-6">
+                <LottieView
+                  autoPlay
+                  loop
+                  style={{
+                    width: 300,
+                    height: 300,
+                    
+                  }}
+                 
+                  source={require("../assets/notask.json")}
+                />
+                <Text className="text-white text-2xl">No Task Added !</Text>
+              </View>
             )}
           </View>
         </ScrollView>
