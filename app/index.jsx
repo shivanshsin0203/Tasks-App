@@ -70,13 +70,13 @@ const App = () => {
     <>
       <SafeAreaView className="h-full bg-slate-800 flex flex-col ">
         <ScrollView>
-          <View className="flex-1 p-5">
+          <View className="flex-1 p-5 mt-2 ">
             {tasks.length > 0 ? (
               tasks.map((item, index) => (
                 <Animated.View
                   key={index}
                   style={{ opacity: fadeOutAnimations[index] }}
-                  className="flex flex-row w-[98%] p-2 bg-gray-700 h-[45px] mb-3 rounded-lg items-center justify-start space-x-8"
+                  className="flex flex-row w-[98%] p-2 bg-gray-700 h-[50px] mb-3 rounded-lg items-center justify-start space-x-8"
                 >
                   <Checkbox
                     style={styles.checkbox}
@@ -100,12 +100,12 @@ const App = () => {
             )}
           </View>
         </ScrollView>
-        <View className=" ml-[78%] mb-2 rounded-full justify-center items-center h-[60px] w-[60px] bg-blue-600 flex">
+        <View className="absolute bottom-[49px] right-4  mb-2 rounded-full justify-center items-center h-[60px] w-[60px] bg-blue-600 flex z-20">
          <Link href='/modal'>
         <Entypo name="plus" size={24} color="white"  />
         </Link>
         </View>
-        <View className="flex flex-row mb-1 w-[95%] p-1">
+        <View className="flex flex-row mb-1 w-[95%] p-1 pl-2 pr-0">
           <TextInput
             value={quickTask}
             onChangeText={(text) => setQuickTask(text)}

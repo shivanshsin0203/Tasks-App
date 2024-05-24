@@ -7,7 +7,7 @@ const RootLayout = () => {
     <Stack>
         <Stack.Screen name="index" options={{headerShown:false}} />
         <Stack.Screen name='modal' options={{presentation:'transparentModal', headerTitle:'Create a Task', headerStyle:{backgroundColor:"#708090"}, headerTitleStyle:{color:"white"}}}/>
-
+         
     </Stack>
   )
 }
