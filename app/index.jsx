@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   Pressable,
   ScrollView,
@@ -6,8 +7,8 @@ import {
   TextInput,
   View,
   Animated,
+  Modal,
 } from "react-native";
-import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
@@ -15,11 +16,14 @@ import Checkbox from "expo-checkbox";
 import LottieView from "lottie-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Entypo } from '@expo/vector-icons';
-import { Link } from "expo-router";
+import { BlurView } from 'expo-blur';
+
 const App = () => {
   const [tasks, setTasks] = useState([]);
   const [quickTask, setQuickTask] = useState("");
   const [fadeOutAnimations, setFadeOutAnimations] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [slideAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
     const getTasks = async () => {
@@ -66,6 +70,30 @@ const App = () => {
     setTasks(updatedTasks);
   };
 
+  const openModal = () => {
+    setModalVisible(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeModal = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
+    });
+  };
+
+  const slideUp = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [500, 0],
+  });
+
   return (
     <>
       <SafeAreaView className="h-full bg-slate-800 flex flex-col ">
@@ -101,9 +129,9 @@ const App = () => {
           </View>
         </ScrollView>
         <View className="absolute bottom-[49px] right-4  mb-2 rounded-full justify-center items-center h-[60px] w-[60px] bg-blue-600 flex z-20">
-         <Link href='/modal'>
-        <Entypo name="plus" size={24} color="white"  />
-        </Link>
+          <Pressable onPress={openModal}>
+            <Entypo name="plus" size={24} color="white" />
+          </Pressable>
         </View>
         <View className="flex flex-row mb-1 w-[95%] p-1 pl-2 pr-0">
           <TextInput
@@ -119,14 +147,60 @@ const App = () => {
         </View>
         <StatusBar style="light" />
       </SafeAreaView>
+
+      {modalVisible && (
+        <Modal
+          transparent={true}
+          visible={modalVisible}
+          animationType="none"
+        >
+          <BlurView intensity={100} style={styles.absolute}>
+            <Animated.View style={[styles.modal, { transform: [{ translateY: slideUp }] }]}>
+              <Pressable onPress={closeModal} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </Pressable>
+              <Text style={styles.modalText}>This is a modal!</Text>
+              {/* Add other modal content here */}
+            </Animated.View>
+          </BlurView>
+        </Modal>
+      )}
     </>
   );
 };
-
-export default App;
 
 const styles = StyleSheet.create({
   checkbox: {
     // Add any custom styles for the checkbox here
   },
+  absolute: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+  },
+  modal: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    height: "68%",
+    backgroundColor: "#1E293B",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  closeButton: {
+    alignSelf: "flex-end",
+  },
+  closeButtonText: {
+    color: "blue",
+    fontSize: 16,
+  },
+  modalText: {
+    fontSize: 18,
+    marginTop: 10,
+  },
 });
+
+export default App;
