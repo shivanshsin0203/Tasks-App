@@ -8,22 +8,24 @@ import {
   View,
   Animated,
   Modal,
+ 
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, Entypo } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import LottieView from "lottie-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Entypo } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-
+import {Picker} from '@react-native-picker/picker';
 const App = () => {
   const [tasks, setTasks] = useState([]);
   const [quickTask, setQuickTask] = useState("");
   const [fadeOutAnimations, setFadeOutAnimations] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [slideAnim] = useState(new Animated.Value(0));
+  const [modalTask, setModalTask] = useState("");
+  const [modalPriority, setModalPriority] = useState("");
 
   useEffect(() => {
     const getTasks = async () => {
@@ -37,11 +39,13 @@ const App = () => {
     getTasks();
   }, []);
 
-  const addTask = async () => {
-    const newTask = { text: quickTask, checked: false };
+  const addTask = async (task = quickTask, priority = "") => {
+    const newTask = { text: task, checked: false, priority };
     const updatedTasks = [...tasks, newTask];
     setTasks(updatedTasks);
     setQuickTask("");
+    setModalTask("");
+    setModalPriority("");
     setFadeOutAnimations([...fadeOutAnimations, new Animated.Value(1)]);
     await AsyncStorage.setItem("tasks", JSON.stringify(updatedTasks));
   };
@@ -89,6 +93,15 @@ const App = () => {
     });
   };
 
+  const handleSaveTask = () => {
+    if (modalTask && modalPriority) {
+      addTask(modalTask, modalPriority);
+      closeModal();
+    } else {
+      alert("Please enter a task name and select a priority.");
+    }
+  };
+
   const slideUp = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [500, 0],
@@ -112,7 +125,12 @@ const App = () => {
                     onValueChange={() => handleCheckboxChange(index)}
                     color={item.checked ? "green" : undefined}
                   />
+                 
                   <Text className="text-white ml-2">{item.text}</Text>
+                  {item.priority === "high" && (
+                    
+                    <FontAwesome name="flag" size={17} color="red" style={{position:"absolute", right:10}} />
+                  )}
                 </Animated.View>
               ))
             ) : (
@@ -128,7 +146,7 @@ const App = () => {
             )}
           </View>
         </ScrollView>
-        <View className="absolute bottom-[49px] right-4  mb-2 rounded-full justify-center items-center h-[60px] w-[60px] bg-blue-600 flex z-20">
+        <View className="absolute bottom-[49px] right-4  mb-4 rounded-full justify-center items-center h-[60px] w-[60px] bg-blue-600 flex z-20">
           <Pressable onPress={openModal}>
             <Entypo name="plus" size={24} color="white" />
           </Pressable>
@@ -141,7 +159,7 @@ const App = () => {
             placeholderTextColor="#64748B"
             className="h-[47px] flex-1 bg-gray-900 text-slate-200 pl-4 rounded-xl"
           />
-          <Pressable className="pt-3" onPress={addTask}>
+          <Pressable className="pt-3" onPress={() => addTask()}>
             <FontAwesome name="send-o" size={28} color="green" />
           </Pressable>
         </View>
@@ -159,8 +177,27 @@ const App = () => {
               <Pressable onPress={closeModal} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>Close</Text>
               </Pressable>
-              <Text style={styles.modalText}>This is a modal!</Text>
-              {/* Add other modal content here */}
+              <Text style={styles.modalText}>Add New Task</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Task Name"
+                placeholderTextColor="#64748B"
+                value={modalTask}
+                onChangeText={setModalTask}
+              />
+              <Picker
+                selectedValue={modalPriority}
+                style={styles.modalPicker}
+                onValueChange={(itemValue) => setModalPriority(itemValue)}
+              >
+                <Picker.Item label="Select Priority" value="" />
+                <Picker.Item label="High" value="high" />
+                <Picker.Item label="Medium" value="medium" />
+                <Picker.Item label="Low" value="low" />
+              </Picker>
+              <Pressable onPress={handleSaveTask} style={styles.saveButton}>
+                <Text style={styles.saveButtonText}>Save Task</Text>
+              </Pressable>
             </Animated.View>
           </BlurView>
         </Modal>
@@ -184,7 +221,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: "68%",
+    height: "38%",
     backgroundColor: "#1E293B",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -194,13 +231,38 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
   },
   closeButtonText: {
-    color: "blue",
+    color: "#2563EB",
     fontSize: 16,
   },
   modalText: {
     fontSize: 18,
     marginTop: 10,
+    color: "#fff",
   },
-});
-
+  modalInput: {
+    backgroundColor: "#374151",
+    color: "#fff",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  modalPicker: {
+    backgroundColor: "#374151",
+    color: "#fff",
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  saveButton: {
+    backgroundColor: "#2563EB",
+    padding: 10,
+    borderRadius: 5,
+    alignSelf: 'flex-end',
+    marginTop: 'auto',
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  }
+);
 export default App;
