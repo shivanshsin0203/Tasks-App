@@ -8,7 +8,7 @@ import {
   View,
   Animated,
   Modal,
- 
+  Button,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,8 +16,18 @@ import { FontAwesome, Entypo } from "@expo/vector-icons";
 import Checkbox from "expo-checkbox";
 import LottieView from "lottie-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BlurView } from 'expo-blur';
-import {Picker} from '@react-native-picker/picker';
+import { BlurView } from "expo-blur";
+import { Picker } from "@react-native-picker/picker";
+import * as Notifications from 'expo-notifications';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 const App = () => {
   const [tasks, setTasks] = useState([]);
   const [quickTask, setQuickTask] = useState("");
@@ -26,7 +36,9 @@ const App = () => {
   const [slideAnim] = useState(new Animated.Value(0));
   const [modalTask, setModalTask] = useState("");
   const [modalPriority, setModalPriority] = useState("");
-
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [selectedTime, setSelectedTime] = useState('');
+  
   useEffect(() => {
     const getTasks = async () => {
       const tasks = await AsyncStorage.getItem("tasks");
@@ -39,6 +51,18 @@ const App = () => {
     getTasks();
   }, []);
 
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+  const handleConfirm = (date) => {
+    console.log("A date has been picked: ", date);
+    setSelectedTime(date);
+    hideDatePicker();
+  };
   const addTask = async (task = quickTask, priority = "") => {
     const newTask = { text: task, checked: false, priority };
     const updatedTasks = [...tasks, newTask];
@@ -95,8 +119,12 @@ const App = () => {
 
   const handleSaveTask = () => {
     if (modalTask && modalPriority) {
+      if(selectedTime){
+        scheduleNotification();
+      }
       addTask(modalTask, modalPriority);
       closeModal();
+      
     } else {
       alert("Please enter a task name and select a priority.");
     }
@@ -106,7 +134,28 @@ const App = () => {
     inputRange: [0, 1],
     outputRange: [500, 0],
   });
-
+  const scheduleNotification = () => {
+    console.log('Scheduling notification for', selectedTime);
+    const currentTime = new Date();
+    const timeDiff = selectedTime.getTime() - currentTime.getTime();
+    const halfwayTime = new Date(currentTime.getTime() + timeDiff / 2);
+    const fullTime = new Date(currentTime.getTime() + timeDiff);
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: '!! Task Reminder !!',
+        body: `Don't forget to complete your task ${modalTask}`,
+      },
+      trigger: halfwayTime,
+    });
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Times Up !!',
+        body: `Time for your ${modalTask} task is up.`,
+      },
+      trigger: fullTime,
+    });
+    setSelectedTime('');
+  };
   return (
     <>
       <SafeAreaView className="h-full bg-slate-800 flex flex-col ">
@@ -125,11 +174,15 @@ const App = () => {
                     onValueChange={() => handleCheckboxChange(index)}
                     color={item.checked ? "green" : undefined}
                   />
-                 
+
                   <Text className="text-white ml-2">{item.text}</Text>
                   {item.priority === "high" && (
-                    
-                    <FontAwesome name="flag" size={17} color="red" style={{position:"absolute", right:10}} />
+                    <FontAwesome
+                      name="flag"
+                      size={17}
+                      color="red"
+                      style={{ position: "absolute", right: 10 }}
+                    />
                   )}
                 </Animated.View>
               ))
@@ -167,13 +220,11 @@ const App = () => {
       </SafeAreaView>
 
       {modalVisible && (
-        <Modal
-          transparent={true}
-          visible={modalVisible}
-          animationType="none"
-        >
+        <Modal transparent={true} visible={modalVisible} animationType="none">
           <BlurView intensity={100} style={styles.absolute}>
-            <Animated.View style={[styles.modal, { transform: [{ translateY: slideUp }] }]}>
+            <Animated.View
+              style={[styles.modal, { transform: [{ translateY: slideUp }] }]}
+            >
               <Pressable onPress={closeModal} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>Close</Text>
               </Pressable>
@@ -195,6 +246,18 @@ const App = () => {
                 <Picker.Item label="Medium" value="medium" />
                 <Picker.Item label="Low" value="low" />
               </Picker>
+              <Button
+                className="mt-2"
+                title="Select Time"
+                onPress={showDatePicker}
+              />
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="time"
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+              />
+              <Text style={styles.selectedTime}>Selected Time: {selectedTime.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })}</Text>
               <Pressable onPress={handleSaveTask} style={styles.saveButton}>
                 <Text style={styles.saveButtonText}>Save Task</Text>
               </Pressable>
@@ -207,9 +270,7 @@ const App = () => {
 };
 
 const styles = StyleSheet.create({
-  checkbox: {
-    // Add any custom styles for the checkbox here
-  },
+  checkbox: {},
   absolute: {
     position: "absolute",
     top: 0,
@@ -221,7 +282,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    height: "38%",
+    height: "46%",
     backgroundColor: "#1E293B",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -251,18 +312,23 @@ const styles = StyleSheet.create({
     color: "#fff",
     borderRadius: 10,
     marginTop: 10,
+    marginBottom: 10,
   },
   saveButton: {
     backgroundColor: "#2563EB",
     padding: 10,
     borderRadius: 5,
-    alignSelf: 'flex-end',
-    marginTop: 'auto',
+    alignSelf: "flex-end",
+    marginTop: "auto",
   },
   saveButtonText: {
     color: "white",
     fontWeight: "bold",
   },
+  selectedTime:{
+    fontSize: 15,
+    marginVertical: 10,
+    color: "#64748B"
   }
-);
+});
 export default App;
